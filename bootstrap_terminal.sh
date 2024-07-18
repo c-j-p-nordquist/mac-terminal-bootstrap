@@ -40,9 +40,6 @@ fi
 # Add plugins to .zshrc file
 sed -i -e 's/plugins=(git)/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/g' ~/.zshrc
 
-# Install AWS CLI
-brew install awscli
-
 # Install other useful binaries
 brew install tmux
 brew install htop
