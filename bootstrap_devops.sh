@@ -45,40 +45,66 @@ tools=(
 # Function to display menu and get user choices
 get_user_choices() {
     local choices=()
-    echo "Select the tools you want to install (enter the numbers, separated by spaces):"
-    echo "0. Install all"
+    local selected=()
     for i in "${!tools[@]}"; do
-        echo "$((i+1)). ${tools[$i]#*:} (${tools[$i]%:*})"
+        selected[i]=false
     done
-    echo "$((${#tools[@]}+1)). Done (proceed with installation)"
-    echo "$((${#tools[@]}+2)). Exit (cancel installation)"
-    
-    read -p "Enter your choices: " input
-    
-    if [[ $input == "0" ]]; then
+
+    while true; do
+        echo "Select the tools you want to install:"
         for i in "${!tools[@]}"; do
-            choices+=("${tools[$i]%:*}")
-        done
-    else
-        for num in $input; do
-            if ((num > 0 && num <= ${#tools[@]})); then
-                choices+=("${tools[$((num-1))]%:*}")
-            elif ((num == ${#tools[@]}+1)); then
-                break
-            elif ((num == ${#tools[@]}+2)); then
-                echo "Installation cancelled."
-                exit 0
+            if [ "${selected[i]}" = true ]; then
+                echo "$((i+1)). [X] ${tools[i]#*:} (${tools[i]%:*})"
+            else
+                echo "$((i+1)). [ ] ${tools[i]#*:} (${tools[i]%:*})"
             fi
         done
-    fi
-    
+        echo "$((${#tools[@]}+1)). Done (proceed with installation)"
+        echo "$((${#tools[@]}+2)). Exit (cancel installation)"
+
+        read -p "Enter a number to select/deselect, 'a' to select all, or 'd' when done: " input
+
+        case $input in
+            ''|*[!0-9]*) 
+                if [[ $input == "a" ]]; then
+                    for i in "${!tools[@]}"; do
+                        selected[i]=true
+                    done
+                elif [[ $input == "d" ]]; then
+                    break
+                else
+                    echo "Invalid input. Please enter a number, 'a', or 'd'."
+                fi
+                ;;
+            *)
+                if (( input > 0 && input <= ${#tools[@]} )); then
+                    selected[$((input-1))]=$([ "${selected[$((input-1))]}" = true ] && echo false || echo true)
+                elif (( input == ${#tools[@]}+1 )); then
+                    break
+                elif (( input == ${#tools[@]}+2 )); then
+                    echo "Installation cancelled."
+                    exit 0
+                else
+                    echo "Invalid number. Please try again."
+                fi
+                ;;
+        esac
+        echo ""
+    done
+
+    for i in "${!selected[@]}"; do
+        if [ "${selected[i]}" = true ]; then
+            choices+=("${tools[i]%:*}")
+        fi
+    done
+
     echo "You've selected: ${choices[*]}"
     read -p "Proceed with installation? (y/n): " confirm
     if [[ $confirm != [Yy]* ]]; then
         echo "Installation cancelled."
         exit 0
     fi
-    
+
     for choice in "${choices[@]}"; do
         install_tool "$choice"
     done
